@@ -1,6 +1,6 @@
-# metamask-testing
+# HackSecret Hackathon Demo 2/8/2024
 
-This code is used for testing metamask permits
+This code is used for demoing metamask and public vs private data
 
 
 ### Node.JS

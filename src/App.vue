@@ -9,11 +9,18 @@ import { SecretNetworkClient } from 'secretjs';
 import { createEncryptionSeed } from './utils';
 import { MsgExecuteContract } from 'secretjs';
 
+const searchUserAddress = ref('secret1zezfylvuxkz3qz4qvz3c5yjj3g2xw7epwp06nf')
 const secretAddress = ref('')
 const getBalanceResponse = ref()
 const getPublicBalanceResponse = ref()
 const txHash = ref('');
 const txData = ref();
+const searchViewingKey = ref('')
+const clientStatus = ref('')
+const newViewingKey = ref('')
+
+const SHD_ADDRESS = "secret13w6n5u3kpvqdunkavgfy40d7ma85xuhxrcxd0a"
+const SHD_CODE_HASH = "31cbe386f9b8f04994a7f3fa097ce52b713527da235f22658aa2ba413138dc5f"
 
 const secretQueryClient = new SecretNetworkClient({
     url: "https://lcd.testnet.secretsaturn.net/",
@@ -21,25 +28,21 @@ const secretQueryClient = new SecretNetworkClient({
   })
 
 async function queryBalance() {
-  try{
   getBalanceResponse.value = await secretQueryClient.query.compute.queryContract({
-    contract_address: "secret13w6n5u3kpvqdunkavgfy40d7ma85xuhxrcxd0a",
-    code_hash: "31cbe386f9b8f04994a7f3fa097ce52b713527da235f22658aa2ba413138dc5f",
+    contract_address: SHD_ADDRESS, 
+    code_hash: SHD_CODE_HASH,
     query: {
         balance: {
-          address: "secret1zezfylvuxkz3qz4qvz3c5yjj3g2xw7epwp06nf",
-          key: "UNKOWN_KEY",
+          address: searchUserAddress.value,
+          key: searchViewingKey.value,
         },
       } 
   })
 
-} catch(err) {
-  console.log(err)
-  }
 }
 
 async function getPublicBalances() {
-  getPublicBalanceResponse.value = await secretQueryClient.query.bank.allBalances({address: "secret1zezfylvuxkz3qz4qvz3c5yjj3g2xw7epwp06nf"})
+  getPublicBalanceResponse.value = await secretQueryClient.query.bank.allBalances({address: searchUserAddress.value})
 }
 
 function approve() {
@@ -61,6 +64,7 @@ function createSigningClient() {
   getMetamaskSecretWalletSigner$().subscribe({
     next: ({signer}) => {
       metamaskSigner = signer;
+      clientStatus.value ="ready";
     }
   })
 }
@@ -71,16 +75,16 @@ async function createViewingKey() {
     url: "https://lcd.testnet.secretsaturn.net/",
     chainId: "pulsar-3",
     wallet: metamaskSigner,
-    walletAddress: "secret1zezfylvuxkz3qz4qvz3c5yjj3g2xw7epwp06nf",
+    walletAddress: secretAddress.value,
     encryptionSeed: createEncryptionSeed("RANDOM_STRING")
   })
 
-  const viewingKeyMsg = { set_viewing_key: { key: "NEW_VEIWING_KEY" } }
+  const viewingKeyMsg = { set_viewing_key: { key: newViewingKey.value } }
 
   const msg = new MsgExecuteContract({
-    sender: "secret1zezfylvuxkz3qz4qvz3c5yjj3g2xw7epwp06nf", 
-    contract_address: "secret13w6n5u3kpvqdunkavgfy40d7ma85xuhxrcxd0a",
-    code_hash: "31cbe386f9b8f04994a7f3fa097ce52b713527da235f22658aa2ba413138dc5f",
+    sender: secretAddress.value, 
+    contract_address: SHD_ADDRESS,
+    code_hash: SHD_CODE_HASH,
     msg: viewingKeyMsg,
   });
 
@@ -99,7 +103,7 @@ async function getTxData() {
     url: "https://lcd.testnet.secretsaturn.net/",
     chainId: "pulsar-3",
     wallet: metamaskSigner,
-    walletAddress: "secret1zezfylvuxkz3qz4qvz3c5yjj3g2xw7epwp06nf",
+    walletAddress: secretAddress.value,
     encryptionSeed: createEncryptionSeed("RANDOM_STRING")
   })
 
@@ -110,44 +114,55 @@ async function getTxData() {
 </script>
 <template>
 <div class="container">
+  <h1> Hack Secret Demo</h1>
+  Search address
+  <input type="text" v-model="searchUserAddress" placeholder="Search Address" style="width: 500px">
+  <button @click="getPublicBalances" class="btn">
+    get public balances
+  </button>
+  {{ getPublicBalanceResponse }}
+
+  
+  <input type="text" v-model="searchViewingKey" placeholder="Enter SHD Viewing Key" style="width: 500px">
   <button @click="queryBalance" class="btn">
     query SHD Balance
   </button>
   {{ getBalanceResponse }}
 
 
-  <!-- <button @click="approve" class="btn">
+  <div class="spacer"></div>
+  <button @click="approve" class="btn">
     approve metamask connection (1 time setup)
-  </button> -->
-
-
-  <!-- <button @click="getAddress" class="btn">
-    getAddress
   </button>
-  {{ secretAddress }} -->
 
-<!-- 
-  <button @click="getPublicBalances" class="btn">
-    get public balances
+
+  <div class="spacer"></div>
+  <button @click="getAddress" class="btn">
+    get Secret Address
   </button>
-  {{ getPublicBalanceResponse }} -->
+  {{ secretAddress }}
 
 
-  <!-- <button @click="createSigningClient" class="btn">
+  <div class="spacer"></div>
+  <button @click="createSigningClient" class="btn">
     create Signing Client
-  </button> -->
+  </button>
+  {{ clientStatus }}
 
 
-  <!-- <button @click="createViewingKey" class="btn">
+  <div class="spacer"></div>
+  <input type="text" v-model="newViewingKey" placeholder="Enter New Viewing Key" style="width: 500px">
+  <button @click="createViewingKey" class="btn">
     create Viewing Key
   </button>
-  {{ txHash }} -->
+  {{ txHash }}
 
 
-  <!-- <button @click="getTxData" class="btn">
+  <div class="spacer"></div>
+  <button @click="getTxData" class="btn">
     get Tx Data
   </button>
-  {{ txData }} -->
+  {{ txData }}
 </div>
 </template>
 <style lang='scss'>
@@ -158,6 +173,10 @@ async function getTxData() {
   .btn {
     width: 200px;
     margin-bottom: 10px;
+  }
+
+  .spacer{
+    height: 20px;
   }
 </style>
 

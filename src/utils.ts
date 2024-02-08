@@ -1,9 +1,4 @@
-import CryptoJS from 'crypto-js';
-
-/**
-* Base64 encode JSON data
-* */
-const encodeJsonToB64 = (toEncode:any) : string => Buffer.from(JSON.stringify(toEncode), 'utf8').toString('base64');
+import CryptoJS from 'crypto-js'
 
 /**
  * Create and return an encryption seed for use in the secret client
@@ -19,6 +14,5 @@ function createEncryptionSeed(password: string) {
 }
 
 export {
-  encodeJsonToB64,
   createEncryptionSeed
 }
